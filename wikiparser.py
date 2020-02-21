@@ -168,30 +168,31 @@ def getLinks(wiki_page):
     return wiki_page.links
 
 
-depth_limit = 1
-keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
-results = []
-
-
-def runalgo(wiki_title, depth_limit):
+def runalgo(wiki_title, depth_limit, keywords):
     if depth_limit <= 0:
         return 
 
+    results = []
     wiki_page = wikipedia.page(wiki_title, None, True, True, False)
     rev, vscore, similarities = getRevisions(wiki_title)
-    kw_score = getKeyWordScore(wiki_title,keywords)
+    kw_score = getKeyWordScore(wiki_title, keywords)
     
     results.append([wiki_title, vscore, kw_score, similarities])
     links= getLinks(wiki_page)
 
     i = 0 
     while i < 2: 
-        runalgo(links[random.randint(0, len(links)-1)], depth_limit-1)
+        runalgo(links[random.randint(0, len(links)-1)], depth_limit-1, keywords)
         i += 1
     return results
 
 
-#get wiki page
-wiki_title = input("wiki page title: ")
-results = runalgo(wiki_title, depth_limit)
-print(results)
+def parsewiki():
+    wiki_title = input("wiki page title: ")
+    depth_limit = 1
+    keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
+    results = runalgo(wiki_title, depth_limit, keywords)
+    print(results)
+
+
+parsewiki()
