@@ -168,6 +168,11 @@ def getLinks(wiki_page):
     return wiki_page.links
 
 
+depth_limit = 1
+keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
+results = []
+
+
 def runalgo(wiki_title, depth_limit):
     if depth_limit <= 0:
         return 
@@ -188,7 +193,5 @@ def runalgo(wiki_title, depth_limit):
 
 #get wiki page
 wiki_title = input("wiki page title: ")
-depth_limit = 1
-keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
 results = runalgo(wiki_title, depth_limit)
 print(results)
