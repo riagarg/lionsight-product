@@ -9,6 +9,7 @@ import json
 import math
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+import csv
 
 
 def getRevisions(pageTitle):
@@ -191,7 +192,28 @@ def runalgo(wiki_title, depth_limit):
     return results
 
 
-#get wiki page
-wiki_title = input("wiki page title: ")
-results = runalgo(wiki_title, depth_limit)
-print(results)
+resultList = []
+with open('dataset.txt') as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    for row in csv_reader:
+        resultList.append(row)
+
+print(resultList)
+
+for item in resultList:
+    results = runalgo(item[0], depth_limit)
+    results.append(item[1])
+    print(results)
+
+def parseResults(results):
+    output = ''
+    for page in range(0,len(results),2):
+        for item in results[page]:
+            output += str(item) + ', '
+        output += results[page+1]
+        output +='\n'
+    return output
+
+with open('dataset2.txt', mode = 'w') as dataset_file:
+    dataset_writer = csv.writer(dataset_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    dataset_writer.writerow([parseResults(results)])
