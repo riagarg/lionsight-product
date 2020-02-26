@@ -201,8 +201,11 @@ with open('dataset.txt') as csv_file:
 print(resultList)
 
 for item in resultList:
-    results = runalgo(item[0], depth_limit)
-    results.append(item[1])
+    try:
+        results = runalgo(item[0], depth_limit)
+        results.append(item[1])
+    except:
+        print(item[0] + "failed")
     print(results)
 
 def parseResults(results):
