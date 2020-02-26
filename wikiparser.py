@@ -198,15 +198,20 @@ with open('dataset.txt') as csv_file:
     for row in csv_reader:
         resultList.append(row)
 
+print("Total List: ")
 print(resultList)
 
+failedList = []
 for item in resultList:
     try:
         results = runalgo(item[0], depth_limit)
         results.append(item[1])
+        print(item[0] + " - sucess")
     except:
-        print(item[0] + "failed")
-    print(results)
+        failedList.append(item[0])
+
+print("Failed items: ")
+print(failedList)
 
 def parseResults(results):
     output = ''
