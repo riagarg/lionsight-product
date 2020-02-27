@@ -193,7 +193,7 @@ def runalgo(wiki_title, depth_limit):
 
 
 resultList = []
-with open('dataset.txt') as csv_file:
+with open('dataset.csv') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     for row in csv_reader:
         resultList.append(row)
