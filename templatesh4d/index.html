@@ -1,0 +1,39 @@
+
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body style = "padding-left:20px">
+  <p style = "font-family:Helvetica; font-size:35px; color: #23a689; padding-top: 30px">Hacking for Defense</p>
+
+
+
+<!--   <div>
+    {% for n in data %}
+    <div>{{n}}</div>
+    {% endfor %}
+  </div> -->
+
+
+<form method="POST" action="/searchpage">
+<p>Wikipedia Page Name: <input type="text" name="wikipage"></p>
+
+<p>Search Depth: <input type="text" name="wikidepth"> </p>
+
+<p>Keywords: <input type="text" name="keywords"> </p>
+<p style = "font-family:Helvetica; font-size:10px "">Please input the keywords in the format of a series of individual keywords separated with commas and no spaces.</p>
+
+<p><input type="submit" value="Search" style = "cursor:pointer;"></p>
+
+Please wait whilst the algorithm runs, it might take a few minutes.
+</form>
+
+</body>
+
+
+</html>
