@@ -41,16 +41,6 @@ def get_revisions(page_title):
 
 
 def get_velocity(userandtime):
-    # timecomp = []
-    # prevtime = None
-    # for line in userandtime:
-    #     if prevtime != None:
-    #         dif = prevtime - line[2]
-    #         timecomp.append(dif)
-    #     prevtime = line[2]
-    # print("timecomp", timecomp)
-
-    # get data and create df
     times = []
     ids = []
     for line in userandtime:
@@ -61,31 +51,24 @@ def get_velocity(userandtime):
     df = pd.DataFrame(data=data, columns=['time', 'revid'])
 
     cluster_count = math.floor(math.sqrt(len(userandtime)))
-    # print(userandtime)
     print("cluster_count", cluster_count)
     kmeans = KMeans(n_clusters=cluster_count).fit(df)
     # centroids = kmeans.cluster_centers_
-    # get number of items per cluster
-    # find the time frame of the cluster (subtract latest time from earliest)
 
-    # itemsincluster = []
-    # top = 0
     scores = []
     for num in range(0, cluster_count):
         cluster = np.where(kmeans.labels_ == num)[0]
-        # datetime_cluster = []
-        # for time in cluster:
-        #     datetime_cluster.append(datetime.utcfromtimestamp(time))
-        timeframe = max(cluster) - min(cluster)
-        clusterscore = timeframe / len(cluster)
-        scores.append(clusterscore)
-        # if clusterscore < smallest: smallest = clusterscore
-        # itemsincluster.append(len(cluster))
+        if (len(cluster) > 1):
+            timeframe = max(cluster) - min(cluster)
+            clusterscore = timeframe / len(cluster)
+            scores.append(clusterscore)
     scores.sort()
-    remove = math.ceil(.5 * cluster_count)
-    scores = scores[remove:]
 
-    print("mean", np.mean(scores))  # smaller number = more volatile
+    if (cluster_count > 10):
+        remove = math.ceil(.25 * cluster_count)
+        scores = scores[remove:]
+
+    print("velocity", np.mean(scores))  # smaller number = more volatile
 
 
 def get_edit_scores(user_and_time):
@@ -158,16 +141,17 @@ def get_users_and_time(revisions):
 
 def get_changes(user_and_time):
     changes_arr = []
-    for i in range(100):
-        oldrevid = user_and_time[i][0]
-        newrevid = user_and_time[i + 1][0]
-        url = 'https://en.wikipedia.org/w/api.php?action=compare&format=json&fromrev=' + str(oldrevid) +\
-              '&torev=' + str(newrevid)
-        open_website = urllib2.urlopen(url)
-        html = open_website.read()
-        insertion = parse_html(html)
-        changes = [oldrevid, newrevid, insertion]
-        changes_arr.append(changes)
+    max = len(user_and_time) if len(user_and_time) < 100 else 100
+    for i in range(0,max):
+        if (i + 1 < max):
+            oldrevid = user_and_time[i][0]
+            newrevid = user_and_time[i + 1][0]
+            url = 'https://en.wikipedia.org/w/api.php?action=compare&format=json&fromrev=' + str(oldrevid) + '&torev=' + str(newrevid)
+            open_website = urllib2.urlopen(url)
+            html = open_website.read()
+            insertion = parse_html(html)
+            changes = [oldrevid, newrevid, insertion]
+            changes_arr.append(changes)
     return changes_arr
 
 
