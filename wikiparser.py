@@ -192,6 +192,7 @@ def runalgo(wiki_title, depth_limit):
 
 
 #get wiki page
-wiki_title = input("wiki page title: ")
+# wiki_title = input("wiki page title: ")
+wiki_title = "coronavirus"
 results = runalgo(wiki_title, depth_limit)
 print(results)
