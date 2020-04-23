@@ -30,14 +30,16 @@ def getRevisions(pageTitle):
             next = "&rvcontinue=" + cont.group(1)             #gets the revision Id from which to start the next request
         except :
             return 0 
+    print(len(revisions))
     userandtime = getUsersandTime(revisions)
-    neteditscore, velocityscore = getEditScores(userandtime)
+    neteditscore, velocityscore, revscore = getEditScores(userandtime)
     #i = 0 
     changes = []
     changes = getchanges(userandtime)
+    similarites=0
     similarites = getsimilarities(changes)
-
-    return neteditscore, velocityscore, similarites
+    revscore= revscore/len(revisions) *1000
+    return neteditscore, velocityscore, similarites, revscore
 
 
 def getEditScores (userandtime) :
@@ -51,7 +53,9 @@ def getEditScores (userandtime) :
     delta_year = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=52)
 
     now = datetime.now(tz=None)
+    revscore = 0
     for line in userandtime:
+        revscore += line[6]
         if line[2] > (now- delta_hours) :
             velocityscore += 2
         elif line[2] > (now- delta_day ) :
@@ -75,12 +79,13 @@ def getEditScores (userandtime) :
             editscore = math.sqrt(editscore) #if the edit is done by a normal person
 
         neteditscore = neteditscore + editscore
-    return neteditscore, velocityscore
+    return neteditscore, velocityscore, revscore
 
 def getUsersandTime(revisions) :
     i = 0
     userandtime = []
     usercount = {}
+    print("revisions", len(revisions))
     for line in revisions:
         p = line.find('user="')
         p = p + 6
@@ -95,6 +100,10 @@ def getUsersandTime(revisions) :
         revise = revise + 7
         revise1 = line.find('"',revise)
         revid = line[revise:revise1]
+        comment = line.find('comment="')
+        comment = comment + 9
+        comment1 = line.find('"',comment)
+        comment = line[comment:comment1]
         i = 0
         if re.findall('bot',username):
             i = 1
@@ -102,13 +111,17 @@ def getUsersandTime(revisions) :
             usercount[username] = usercount[username]+1
         else:
             usercount[username] = 1
-        userandtime.append([revid,username,time,usercount[username],i])
+        revscore= 0
+        if ("reverted" in comment) or ("Undid" in comment) or ("undid" in comment) or ("Reverted" in comment) :
+            revscore =1
+        userandtime.append([revid,username,time,usercount[username],i, comment, revscore])
+    print("userntime", len(userandtime))
     return userandtime
 
 def getchanges(userandtime) :
     #changes.append(getchanges(userandtime[i][0], userandtime[i+1][0]))
     changesarr = []
-    for i in range(100):
+    for i in range(200):
         oldrevid = userandtime[i][0]
         newrevid = userandtime[i+1][0]
         oldrevid1 = str(oldrevid)
@@ -117,27 +130,38 @@ def getchanges(userandtime) :
         openwebsite = urllib2.urlopen(url)
         html = openwebsite.read()
         insertion = parsehtml(html)
+        # print(html)
         changes = []
         changes.append(oldrevid)
         changes.append(newrevid)
         changes.append(insertion)
         changesarr.append(changes)
+        # if i == 0 :
+    #print("changes", changesarr[0:2])
     return changesarr
 
 def getsimilarities(wordarr) :
     #return 0
     count = 0 
-    similarties = 0
+    score = 0
+    # print("warr", wordarr)
     while count < (len(wordarr)-3) :
         #seen = {}
-        for x in wordarr[count+3] :
-            for i in range(3) :
-                for y in wordarr[count+i] :
-                   
-                    if x == y :
-                        similarties += 1
+        if len(wordarr[count][2])>0 :
+            for x in wordarr[count][2][0] :
+                for i in range(3) :
+                    similarities=0
+                    if len(wordarr[count+i+1][2]) > 0 :
+                        for y in wordarr[count+i+1][2][0] :
+                            if x == y :
+                                similarities += 1
+                        
+                        s = similarities/ len(wordarr[count])
+                        if s >.7 :
+                            score+=1
         count+=1
-    return similarties
+    print(score)
+    return score
 
 def parsehtml(revision_json) :
     #print(type(revision_json))
@@ -145,8 +169,10 @@ def parsehtml(revision_json) :
     #print(jsonObject)
     html = jsonObject["compare"]["*"]
     soup_dump = BeautifulSoup(html, 'html.parser')
-    #print(html)
+    # print(soup_dump)
     changes = soup_dump.find_all('ins', {'class': 'diffchange'})
+    # change =soup_dump.find_all('td', {'class': 'diffchange'}).get_text()
+    # print("changes", changes)
     out = []
     
     for i in changes:
@@ -156,7 +182,8 @@ def parsehtml(revision_json) :
         if (i.isspace()) or (len(i) == 0) or (i == None) or (i == ""):
             continue
         else:
-            out.append(i)
+            out.append(i.split())
+    
     return out
 
 def getKeyWordScore(wiki_title, keywords):
@@ -182,10 +209,10 @@ def runalgo(wiki_title, depth_limit) :
         return 
 
     wiki_page = wikipedia.page(wiki_title, None, True, True, False)
-    rev, vscore, similarities = getRevisions(wiki_title)
+    rev, vscore, similarities, revscore = getRevisions(wiki_title)
     kw_score = getKeyWordScore(wiki_title,keywords)
     
-    results.append([wiki_title, vscore, kw_score, similarities])
+    results.append([wiki_title, vscore, kw_score, similarities, revscore])
 
     links= getLinks(wiki_page)
 
@@ -194,10 +221,15 @@ def runalgo(wiki_title, depth_limit) :
         runalgo(links[random.randint(0, len(links)-1)], depth_limit-1)
         i+=1
     return results
+titles = wiki_title.split(", ")
+print(titles)
+for x in titles :
+    
+    r = runalgo(x, depth_limit)
+    print(r)
+    results.append(r)
 
-results = runalgo(wiki_title, depth_limit)
 
-
-print(results)
+# print(results)
 
  
