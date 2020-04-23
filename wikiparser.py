@@ -226,10 +226,11 @@ print(titles)
 for x in titles :
     
     r = runalgo(x, depth_limit)
-    print(r)
+    #print(r)
     results.append(r)
 
-
-# print(results)
+for r in results : 
+    print(r)
+print(results)
 
  
