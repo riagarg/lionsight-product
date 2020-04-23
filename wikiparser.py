@@ -12,15 +12,12 @@ from datetime import datetime, timedelta
 
 
 def getRevisions(pageTitle):
-
     pageTitle = pageTitle.replace(" ", "_")
     url = "https://en.wikipedia.org/w/api.php?action=query&format=xml&prop=revisions&rvlimit=500&titles=" + pageTitle
-
     revisions = []                                  #list of all accumulated revisions
-    
     next = ''                                             #information for the next request
+
     while True:
-        #print(pageTitle)
         try :
             response = urllib2.urlopen(url + next).read()     #web request
             revisions+=(re.findall('<rev [^>]*>', response.decode("utf-8")))  #adds all revisions from the current request to the list
@@ -30,6 +27,7 @@ def getRevisions(pageTitle):
             next = "&rvcontinue=" + cont.group(1)             #gets the revision Id from which to start the next request
         except :
             return 0 
+
     print(len(revisions))
     userandtime = getUsersandTime(revisions)
     neteditscore, velocityscore, revscore = getEditScores(userandtime)
@@ -42,31 +40,33 @@ def getRevisions(pageTitle):
     return neteditscore, velocityscore, similarites, revscore
 
 
-def getEditScores (userandtime) :
+
+def getEditScores(userandtime):
     neteditscore = 0
     velocityscore = 0 
-    delta_hours = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=6,  weeks=0)
-    delta_day = timedelta( days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=0)
-    delta_week = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=1)
-    delta_month = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=4)
-    delta_halfyear = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=26)
-    delta_year = timedelta( days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0,  weeks=52)
+    delta_hours = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=6, weeks=0)
+    delta_day = timedelta(days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
+    delta_week = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=1)
+    delta_month = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=4)
+    delta_halfyear = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=26)
+    delta_year = timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=52)
 
     now = datetime.now(tz=None)
     revscore = 0
     for line in userandtime:
+
         revscore += line[6]
         if line[2] > (now- delta_hours) :
             velocityscore += 2
-        elif line[2] > (now- delta_day ) :
+        elif line[2] > (now - delta_day):
             velocityscore += 1.5
-        elif line[2] > (now- delta_week ) :
+        elif line[2] > (now - delta_week):
             velocityscore += 1.2
-        elif line[2] > (now- delta_month ) :
+        elif line[2] > (now - delta_month):
             velocityscore += .2
-        elif line[2] > (now- delta_halfyear ) :
-            velocityscore += .2
-        elif line[2] > (now- delta_year ) :  #LOOK AT EDITS IN WINDOWS SO THAT YOU FIND PAST WINDOWS
+        elif line[2] > (now - delta_halfyear):
+            velocityscore += .15
+        elif line[2] > (now - delta_year):  #LOOK AT EDITS IN WINDOWS SO THAT YOU FIND PAST WINDOWS
             velocityscore += .1   #could be assigned to past thing
         else :
             velocityscore += .01
@@ -75,17 +75,19 @@ def getEditScores (userandtime) :
             editscore = .5 #if the edit is done by a bot
         else:
             editscore = line[3]
-        if editscore>1:
+
+        if editscore > 1:
             editscore = math.sqrt(editscore) #if the edit is done by a normal person
 
         neteditscore = neteditscore + editscore
     return neteditscore, velocityscore, revscore
 
-def getUsersandTime(revisions) :
+
+def getUsersandTime(revisions):
     i = 0
     userandtime = []
     usercount = {}
-    print("revisions", len(revisions))
+
     for line in revisions:
         p = line.find('user="')
         p = p + 6
@@ -118,8 +120,8 @@ def getUsersandTime(revisions) :
     print("userntime", len(userandtime))
     return userandtime
 
-def getchanges(userandtime) :
-    #changes.append(getchanges(userandtime[i][0], userandtime[i+1][0]))
+
+def getChanges(userandtime):
     changesarr = []
     for i in range(200):
         oldrevid = userandtime[i][0]
@@ -140,9 +142,10 @@ def getchanges(userandtime) :
     #print("changes", changesarr[0:2])
     return changesarr
 
-def getsimilarities(wordarr) :
-    #return 0
+
+def getSimilarities(wordarr):
     count = 0 
+
     score = 0
     # print("warr", wordarr)
     while count < (len(wordarr)-3) :
@@ -163,13 +166,13 @@ def getsimilarities(wordarr) :
     print(score)
     return score
 
+
+
 def parsehtml(revision_json) :
-    #print(type(revision_json))
     jsonObject = json.loads(revision_json)
-    #print(jsonObject)
     html = jsonObject["compare"]["*"]
     soup_dump = BeautifulSoup(html, 'html.parser')
-    # print(soup_dump)
+
     changes = soup_dump.find_all('ins', {'class': 'diffchange'})
     # change =soup_dump.find_all('td', {'class': 'diffchange'}).get_text()
     # print("changes", changes)
@@ -186,41 +189,46 @@ def parsehtml(revision_json) :
     
     return out
 
-def getKeyWordScore(wiki_title, keywords):
 
-    summary= re.sub(r'[^\w\s]', '', wikipedia.summary(wiki_title)).lower().split()
-    score= 0
-    for k in keywords :
-        if k in summary :
+def getKeyWordScore(wiki_title, keywords):
+    summary = re.sub(r'[^\w\s]', '', wikipedia.summary(wiki_title)).lower().split()
+    score = 0
+    for k in keywords:
+        if k in summary:
             score += summary.count(k) #use better search algo
     return score 
 
-def getLinks(wiki_page) :
+
+def getLinks(wiki_page):
     return wiki_page.links
 
-#get wiki page
-wiki_title =input("wiki page title: ")
+
 depth_limit = 1
 keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
+results = []
 
-results= []
-def runalgo(wiki_title, depth_limit) :
-    if depth_limit<= 0 :
+#get wiki page
+wiki_title = input("wiki page title: ")
+
+def runalgo(wiki_title, depth_limit):
+    if depth_limit <= 0:
         return 
 
     wiki_page = wikipedia.page(wiki_title, None, True, True, False)
     rev, vscore, similarities, revscore = getRevisions(wiki_title)
     kw_score = getKeyWordScore(wiki_title,keywords)
     
+
     results.append([wiki_title, vscore, kw_score, similarities, revscore])
 
     links= getLinks(wiki_page)
 
     i = 0 
-    while i < 2 : 
+    while i < 2: 
         runalgo(links[random.randint(0, len(links)-1)], depth_limit-1)
-        i+=1
+        i += 1
     return results
+  
 titles = wiki_title.split(", ")
 print(titles)
 for x in titles :
@@ -234,3 +242,4 @@ for r in results :
 print(results)
 
  
+

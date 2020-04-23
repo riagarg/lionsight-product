@@ -1,4 +1,4 @@
-H4D Guerilla Warfare
+## H4D Lionsight
 
 Helpful links to get started:
 
