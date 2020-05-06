@@ -9,6 +9,7 @@ import json
 import math
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 from sklearn.cluster import KMeans
 import numpy as np
@@ -16,6 +17,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import dateutil.parser
+# import calendar
 
 def get_revisions(page_title):
     page_title = page_title.replace(" ", "_")
@@ -353,13 +355,17 @@ def get_avgs(by_date):
 
     return avg_per_period, avg_diff
 
-def calc_velocities_by_dates(by_date):
+
+def calc_velocities_by_dates(by_date, date_type, most_recent_dt, oldest_dt):
     avg_per_period, avg_diff = get_avgs(by_date)
     velocity = 0
     pre_date = by_date[0][0]
+    period_over_ave = []
+    period_count = 0
     for period in by_date:
         if len(period) > avg_per_period:
             velocity += 0.01 * avg_per_period
+            period_over_ave.append(period_count)
         for date in period:
             if pre_date != date:
                 diff = date[2] - pre_date[2]
@@ -372,13 +378,29 @@ def calc_velocities_by_dates(by_date):
                 elif (avg_diff + (avg_diff/2)) < diff:
                     velocity += 0.01 * avg_per_period
             pre_date = date
+        period_count += 1
+    velocity_summary(period_over_ave, date_type, most_recent_dt, oldest_dt)
     return math.sqrt(velocity)
 
 
-def calc_total_velocity(by_year, by_month, by_day):
-    year = calc_velocities_by_dates(by_year)
-    month = calc_velocities_by_dates(by_month)
-    day = calc_velocities_by_dates(by_day)
+def velocity_summary(period_over_ave, date_type, most_recent_dt, oldest_dt):
+    to_print = ""
+    for period in period_over_ave:
+        if (date_type == "year"):
+            to_print += str(int(oldest_dt.year) + period) + ", "
+        elif (date_type == "month"):
+            plus_delta = oldest_dt + relativedelta(months=period)
+            to_print += str(plus_delta.month) + "/" + str(plus_delta.year)[2:4] + ", "
+        else:
+            plus_delta = oldest_dt + timedelta(days=period)
+            to_print += str(plus_delta.month) + "/" + str(plus_delta.day) + "/" + str(plus_delta.year)[2:4] + ", "
+    print(date_type + "s with more edits than the avg edits per " + date_type + ": " + to_print[0:len(to_print)-2])
+
+
+def calc_total_velocity(by_year, by_month, by_day, most_recent_dt, oldest_dt):
+    year = calc_velocities_by_dates(by_year, "year", most_recent_dt, oldest_dt)
+    month = calc_velocities_by_dates(by_month, "month", most_recent_dt, oldest_dt)
+    day = calc_velocities_by_dates(by_day, "day", most_recent_dt, oldest_dt)
     return math.sqrt(year+month+day)
 
 
@@ -399,17 +421,12 @@ def get_newest_oldest_dt(userandtime):
 
 def get_velocity(userandtime):
     most_recent_dt, oldest_dt = get_newest_oldest_dt(userandtime)
-    print("most_recent_dt:", most_recent_dt)
-    print("oldest_dt:", oldest_dt)
 
     by_year = edits_by_year(userandtime, most_recent_dt, oldest_dt)
-    print("len by_year:", len(by_year))
     by_month = edits_by_month(userandtime, most_recent_dt, oldest_dt, by_year)
-    print("len by_month:", len(by_month))
     by_day = edits_by_day(userandtime, most_recent_dt, oldest_dt, by_month)
-    print("len by_day:", len(by_day))
 
-    velocity = calc_total_velocity(by_year, by_month, by_day)
+    velocity = calc_total_velocity(by_year, by_month, by_day, most_recent_dt, oldest_dt)
     print("total velocity:", velocity)
 
     return (by_year, by_month, by_day)
@@ -424,34 +441,30 @@ def parse_wiki():
     print(results)
     return (year, month, day)
 
+parse_wiki()
+
 # DATA COLLECTION
 
-year, month, day = parse_wiki()
-
-generalData = pd.DataFrame([], columns = ("revID", "Editor","DateTime","??", "?"))
-for i in day:
-    currentParse = pd.DataFrame(i, columns = ("revID", "Editor","DateTime","??", "?"))
-    generalData = generalData.append(currentParse)
-
-# print(generalData)
-
-generalData['DateTime'] = pd.to_datetime(generalData['DateTime'])
-generalData['Year'] = generalData['DateTime'].dt.year
-generalData['Month'] = generalData['DateTime'].dt.month
-generalData['Date'] = generalData['DateTime'].dt.date
-
-# generalData
-
-sns.set(style="darkgrid")
-plt.figure(figsize=(20,10))
-plot = sns.countplot(generalData['Year'], color=None)
-plot.axes.set_title("Edits on Wikipedia's Coronavirus Page", fontsize=50)
-plot.tick_params(labelsize=10)
-plot.set_ylabel("Count of Edits")
-
-
 def collect_data():
-    list = ["Homosexuality", "Abortion", "Benjamin Franklin", "Elvis Presley", "Nuclear power", "Nicolaus Copernicus", "Tiger", "Euthanasia", "Alzheimer's disease", "Sherlock Holmes", "Israel and the apartheid analogy", "Liancourt Rocks", "Schizophrenia", "Pumpkin", "SQL", "Password", "Henry Cavendish", "Pension", "Mexican drug war", "Hungarians in Romania", "Markov chain", "Mentha", "Foucault pendulum", "Indian cobra", "Harmonium", "Infrared photography", "Bohrium", "Hungarian forint", "Hendrik Lorentz", "1980s oil glut", "Deutsches Museum", "Ara (genus", "Schlenk flask"]
-    for item in list:
-        wiki_title = item
-        year, month, day = parse_wiki()
+    year, month, day = parse_wiki()
+
+    generalData = pd.DataFrame([], columns = ("revID", "Editor","DateTime","??", "?"))
+    for i in day:
+        currentParse = pd.DataFrame(i, columns = ("revID", "Editor","DateTime","??", "?"))
+        generalData = generalData.append(currentParse)
+
+    generalData['DateTime'] = pd.to_datetime(generalData['DateTime'])
+    generalData['Year'] = generalData['DateTime'].dt.year
+    generalData['Month'] = generalData['DateTime'].dt.month
+    generalData['Date'] = generalData['DateTime'].dt.date
+
+    sns.set(style="darkgrid")
+    plt.figure(figsize=(20,10))
+    plot = sns.countplot(generalData['Year'], color=None)
+    plot.axes.set_title("Edits on Wikipedia's Coronavirus Page", fontsize=50)
+    plot.tick_params(labelsize=10)
+    plot.set_ylabel("Count of Edits")
+    # list = ["Homosexuality", "Abortion", "Benjamin Franklin", "Elvis Presley", "Nuclear power", "Nicolaus Copernicus", "Tiger", "Euthanasia", "Alzheimer's disease", "Sherlock Holmes", "Israel and the apartheid analogy", "Liancourt Rocks", "Schizophrenia", "Pumpkin", "SQL", "Password", "Henry Cavendish", "Pension", "Mexican drug war", "Hungarians in Romania", "Markov chain", "Mentha", "Foucault pendulum", "Indian cobra", "Harmonium", "Infrared photography", "Bohrium", "Hungarian forint", "Hendrik Lorentz", "1980s oil glut", "Deutsches Museum", "Ara (genus", "Schlenk flask"]
+    # for item in list:
+    #     wiki_title = item
+    #     year, month, day = parse_wiki()
