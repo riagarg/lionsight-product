@@ -120,7 +120,7 @@ def getUsersandTime(revisions) :
         revscore= 0
         revertedids=[]
         if ("reverted" in comment) or ("Undid" in comment) or ("undid" in comment) or ("Reverted" in comment) :
-            revertedids.append([revid,parid])
+            revertedids.append((revid,parid))
             print(revid,parid)
             revscore =1
         userandtime.append([revid,username,time,usercount[username],i, comment, revscore])
