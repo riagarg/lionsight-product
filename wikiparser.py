@@ -37,11 +37,11 @@ def get_revisions(page_title):
             return 0
 
     user_and_time = get_users_and_time(revisions)
-    net_edit_score, velocity_score = get_edit_scores(user_and_time)
+    net_edit_score, velocity_score, reversion_score = get_edit_scores(user_and_time)
     year, month, day = get_velocity(user_and_time)
     changes = get_changes(user_and_time)
-    similarities = get_similarities(changes)
-    return net_edit_score, velocity_score, similarities, year, month ,day
+    # similarities = get_similarities(changes)
+    return net_edit_score, velocity_score, reversion_score, year, month ,day
 
 
 def get_edit_scores(user_and_time):
@@ -56,11 +56,11 @@ def get_edit_scores(user_and_time):
 
     now = datetime.now(tz=None)
     revscore = 0
-    for line in userandtime:
+    for line in user_and_time:
 
         revscore += line[6]
         if line[2] > (now- delta_hours) :
-            velocityscore += 2
+            velocity_score += 2
         elif line[2] > (now - delta_day):
             velocity_score += 1.5
         elif line[2] > (now - delta_week):
@@ -82,12 +82,12 @@ def get_edit_scores(user_and_time):
         if edit_score > 1:
             edit_score = math.sqrt(edit_score)  # if the edit is done by a normal person
 
-        neteditscore = neteditscore + editscore
-    return neteditscore, velocityscore, revscore
+        net_edit_score = net_edit_score + edit_score
+    return net_edit_score, velocity_score, revscore
 
 
 def get_users_and_time(revisions):
-    user_and_time = []
+    userandtime = []
     user_count = {}
 
     for line in revisions:
@@ -124,15 +124,15 @@ def get_users_and_time(revisions):
         if username in user_count:
             user_count[username] = user_count[username] + 1
         else:
-            usercount[username] = 1
+            user_count[username] = 1
         revscore = 0
-        if ("reverted" in comment) or ("Undid" in comment) or ("undid" in comment) or ("Reverted" in comment):
+        if ("reverted" in comment) or ("Undid" in comment) or ("undid" in comment) or ("Reverted" in comment) or ("Rollback" in comment) or ("rollback" in comment):
             revscore =1
-        userandtime.append([revid, username, time, usercount[username], i, comment, revscore])
+        userandtime.append([revid, username, time, user_count[username], i, comment, revscore])
     print("userntime", len(userandtime))
     return userandtime
 
-def get_changes(userandtime):
+def get_changes(user_and_time):
     changesarr = []
     max = len(user_and_time) if len(user_and_time) < 200 else 200
     for i in range(0,max):
@@ -144,7 +144,7 @@ def get_changes(userandtime):
         html = open_website.read()
         insertion = parse_html(html)
         changes = [oldrevid, newrevid, insertion]
-        changes_arr.append(changes)
+        changesarr.append(changes)
     return changesarr
 
 
@@ -209,10 +209,12 @@ def run_algo(wiki_title, depth_limit, keywords):
 
     results = []
     wiki_page = wikipedia.page(wiki_title, None, True, True, False)
-    rev, vscore, similarities, year, month, day = get_revisions(wiki_title)
+    rev, vscore, reversions, year, month, day = get_revisions(wiki_title)
     kw_score = get_key_word_score(wiki_title, keywords)
 
-    results.append([wiki_title, vscore, kw_score, similarities])
+    consolidated_score= 32.31521 * vscore + 1.123432 * reversions - 285.7542
+
+    results.append([wiki_title, vscore, kw_score, reversions, consolidated_score])
     links = get_links(wiki_page)
 
     i = 0
