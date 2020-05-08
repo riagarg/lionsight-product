@@ -34,16 +34,18 @@ class ItemTable(Table):
 	kw_score = Col("Keyword Score")
 	revscore = Col("Reversion Score")
 	consolidated_score = Col("Consolidated Score")
+	is_contentious= Col("Is Contentious?")
 	
 
 
 class Item(object):
-	def __init__(self, wiki_title, vscore, kw_score, revscore, consolidated_score):
+	def __init__(self, wiki_title, vscore, kw_score, revscore, consolidated_score,is_contentious):
 		self.wiki_title = wiki_title
 		self.vscore = vscore
 		self.kw_score = kw_score
 		self.revscore = revscore
 		self.consolidated_score = consolidated_score
+		self.is_contentious= is_contentious
 
 @app.route('/')
 def index():
@@ -573,10 +575,13 @@ def searchPage():
 #net_edit_score, velocity_score, reversion_score, year, month ,day
 
 		consolidated_score= 32.31521 * vscore + 1.123432 * revscore - 285.7542
+		is_contentious = "False"
+		if consolidated_score >=500 :
+			is_contentious = "True"
 
 		#results.append([wiki_title, vscore, kw_score, similarities])
 		#results.append(dict(wiki_title=wiki_title, vscore = vscore, kw_score = kw_score, similarities = similarities, revscore = revscore, consolidated_score = consolidated_score))
-		results.append(dict(wiki_title=wiki_title, vscore = vscore, kw_score = kw_score, revscore = revscore, consolidated_score = consolidated_score))
+		results.append(dict(wiki_title=wiki_title, vscore = vscore, kw_score = kw_score, revscore = revscore, consolidated_score = consolidated_score, is_contentious=is_contentious ))
 		
 		if depth_limit>1:
 			manager = multiprocessing.Manager()
@@ -639,7 +644,7 @@ if __name__ == "__main__":
 	@click.option('--debug', is_flag=True)
 	@click.option('--threaded', is_flag=True)
 	@click.argument('HOST', default='0.0.0.0')
-	@click.argument('PORT', default=8111, type=int)
+	@click.argument('PORT', default=8112, type=int)
 	def run(debug, threaded, host, port):
 		HOST, PORT = host, port
 		print("running on %s:%d" % (HOST, PORT))
