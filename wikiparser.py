@@ -38,10 +38,10 @@ def get_revisions(page_title):
 
     user_and_time = get_users_and_time(revisions)
     net_edit_score, velocity_score, reversion_score = get_edit_scores(user_and_time)
-    year, month, day = get_velocity(user_and_time)
+    velocity_score = get_velocity(user_and_time)
     changes = get_changes(user_and_time)
     # similarities = get_similarities(changes)
-    return net_edit_score, velocity_score, reversion_score, year, month ,day
+    return net_edit_score, velocity_score, reversion_score
 
 
 def get_edit_scores(user_and_time):
@@ -209,7 +209,7 @@ def run_algo(wiki_title, depth_limit, keywords):
 
     results = []
     wiki_page = wikipedia.page(wiki_title, None, True, True, False)
-    rev, vscore, reversions, year, month, day = get_revisions(wiki_title)
+    rev, vscore, reversions = get_revisions(wiki_title)
     kw_score = get_key_word_score(wiki_title, keywords)
 
     consolidated_score= 32.31521 * vscore + 1.123432 * reversions - 285.7542
@@ -221,7 +221,7 @@ def run_algo(wiki_title, depth_limit, keywords):
     while i < 2:
         run_algo(links[random.randint(0, len(links) - 1)], depth_limit - 1, keywords)
         i += 1
-    return results, year, month, day
+    return results
 
 # NEW VELOCITY HELPER FUNCTIONS
 
@@ -431,7 +431,7 @@ def get_velocity(userandtime):
     velocity = calc_total_velocity(by_year, by_month, by_day, most_recent_dt, oldest_dt)
     print("total velocity:", velocity)
 
-    return (by_year, by_month, by_day)
+    return velocity
 
 # RUN CODE
 
@@ -439,33 +439,33 @@ def parse_wiki():
     wiki_title = input("wiki page title: ")
     depth_limit = 1
     keywords = []
-    results, year, month, day = run_algo(wiki_title, depth_limit, keywords)
+    results = run_algo(wiki_title, depth_limit, keywords)
     print(results)
-    return (year, month, day)
+    # return (year, month, day)
 
 parse_wiki()
 
 # DATA COLLECTION
 
-def collect_data():
-    year, month, day = parse_wiki()
+# def collect_data():
+#     year, month, day = parse_wiki()
 
-    generalData = pd.DataFrame([], columns = ("revID", "Editor","DateTime","??", "?"))
-    for i in day:
-        currentParse = pd.DataFrame(i, columns = ("revID", "Editor","DateTime","??", "?"))
-        generalData = generalData.append(currentParse)
+#     generalData = pd.DataFrame([], columns = ("revID", "Editor","DateTime","??", "?"))
+#     for i in day:
+#         currentParse = pd.DataFrame(i, columns = ("revID", "Editor","DateTime","??", "?"))
+#         generalData = generalData.append(currentParse)
 
-    generalData['DateTime'] = pd.to_datetime(generalData['DateTime'])
-    generalData['Year'] = generalData['DateTime'].dt.year
-    generalData['Month'] = generalData['DateTime'].dt.month
-    generalData['Date'] = generalData['DateTime'].dt.date
+#     generalData['DateTime'] = pd.to_datetime(generalData['DateTime'])
+#     generalData['Year'] = generalData['DateTime'].dt.year
+#     generalData['Month'] = generalData['DateTime'].dt.month
+#     generalData['Date'] = generalData['DateTime'].dt.date
 
-    sns.set(style="darkgrid")
-    plt.figure(figsize=(20,10))
-    plot = sns.countplot(generalData['Year'], color=None)
-    plot.axes.set_title("Edits on Wikipedia's Coronavirus Page", fontsize=50)
-    plot.tick_params(labelsize=10)
-    plot.set_ylabel("Count of Edits")
+#     sns.set(style="darkgrid")
+#     plt.figure(figsize=(20,10))
+#     plot = sns.countplot(generalData['Year'], color=None)
+#     plot.axes.set_title("Edits on Wikipedia's Coronavirus Page", fontsize=50)
+#     plot.tick_params(labelsize=10)
+#     plot.set_ylabel("Count of Edits")
     # list = ["Homosexuality", "Abortion", "Benjamin Franklin", "Elvis Presley", "Nuclear power", "Nicolaus Copernicus", "Tiger", "Euthanasia", "Alzheimer's disease", "Sherlock Holmes", "Israel and the apartheid analogy", "Liancourt Rocks", "Schizophrenia", "Pumpkin", "SQL", "Password", "Henry Cavendish", "Pension", "Mexican drug war", "Hungarians in Romania", "Markov chain", "Mentha", "Foucault pendulum", "Indian cobra", "Harmonium", "Infrared photography", "Bohrium", "Hungarian forint", "Hendrik Lorentz", "1980s oil glut", "Deutsches Museum", "Ara (genus", "Schlenk flask"]
     # for item in list:
     #     wiki_title = item
