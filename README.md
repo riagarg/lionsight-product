@@ -6,11 +6,11 @@ Our project let's you find contentious spaces on Wikipedia and the language and 
 
 ## How to use
 
-To run the web app locally, clone the repo and use wikiparser_3.py.
+To run the web app locally, clone the repo and use wikiparser_2.py.
 
 Pip install all necessary packages including Wikipedia, pandas, BeautifulSoup, re, numpy, seaborn, matplotlib, datetime
 
-run `<python wikiparser_3.py>`
+run `<python wikiparser_2.py>`
 
 Open the URL that pops up in the console and enter the title of the Wikipedia page.
 
