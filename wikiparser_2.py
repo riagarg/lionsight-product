@@ -10,9 +10,6 @@ import math
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import pandas as pd
-from sklearn.cluster import KMeans
-import numpy as np
 import dateutil.parser
 import threading
 import time
@@ -24,7 +21,6 @@ import os
 from flask import *
 from flask_table import Table, Col
 
-#tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templatesh4d')
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templatesh4d')
 app = Flask(__name__, template_folder=tmpl_dir)
 
@@ -511,7 +507,6 @@ def searchPage():
 	keywords = keywordstring.lower().split(',')
 	for kws in keywords:
 		kws = kws.strip()
-	#keywords = ["bad", "china", "good", "quality", "country", "asia", "war", "asian", "east", "power", "democracy", "republic"]
 	results= []
 
 
@@ -566,7 +561,6 @@ def searchPage():
 		wiki_page = wikipedia.page(title = wiki_title, pageid = None, auto_suggest = True, redirect = True, preload = False)
 
 		links= getLinks(wiki_page)
-		#neteditscore, vscore, similarities, revscore = getRevisions(wiki_title)
 		neteditscore, vscore, revscore = getRevisions(wiki_title)
 
 		kw_score = getKeyWordScore(wiki_title,keywords)
